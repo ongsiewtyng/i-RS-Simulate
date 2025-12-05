@@ -1,0 +1,5 @@
+{
+  "name": "i-RS",
+  "description": "A comprehensive machine operation dashboard visualizing downtime analysis, production utilization, and machine conditions with interactive charts and timelines.",
+  "requestFramePermissions": []
+}
