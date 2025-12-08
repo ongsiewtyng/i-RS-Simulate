@@ -4,7 +4,19 @@ import { MachineStatus, DowntimeRecord } from '../types';
 import { COLORS, REASON_COLORS } from '../constants';
 import UtilizationClock from './charts/UtilizationClock';
 import { generateTimelineEvents, MOCK_DOWNTIME_RECORDS } from '../services/mockData';
-import { Download, RefreshCw, LayoutGrid, List, Clock, Zap, Activity, Info } from 'lucide-react';
+import { Download, RefreshCw, LayoutGrid, List, Clock, Zap, Activity, Info, ChevronDown } from 'lucide-react';
+
+// Options for dropdowns
+const REASON_OPTIONS = ['Not Chosen', 'Mechanical', 'Electrical', 'Operational', 'Material'];
+
+// Dynamic remarks based on reason
+const REMARK_OPTIONS: Record<string, string[]> = {
+  'Not Chosen': ['Not Chosen', 'Pending Investigation'],
+  'Mechanical': ['Conveyor Jam', 'Belt Slippage', 'Motor Failure', 'Bearing Issue', 'Hydraulic Leak'],
+  'Electrical': ['Sensor Misalignment', 'Overheat Protection', 'Power Loss', 'Fuse Blown', 'Drive Fault'],
+  'Operational': ['Shift Changeover', 'Cleaning', 'Operator Break', 'Setup', 'Quality Check'],
+  'Material': ['Out of Raw Material', 'Bad Material Quality', 'Hopper Empty', 'Packaging Issue'],
+};
 
 const Dashboard: React.FC = () => {
   const [timelineEvents] = useState(generateTimelineEvents(new Date()));
@@ -14,13 +26,10 @@ const Dashboard: React.FC = () => {
   // State for interactive filtering
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
-  // Simulation: Update clock and randomly toggle live stats slightly
+  // Simulation: Update clock
   useEffect(() => {
     const timer = setInterval(() => {
         setCurrentTime(new Date());
-        
-        // Randomly simulating slight value changes in records for "live" feel (optional)
-        // For now, we keep the records static but refresh the time
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -43,7 +52,6 @@ const Dashboard: React.FC = () => {
   ];
 
   const handleRowClick = (reason: string | null) => {
-    // If clicking same reason, deselect, otherwise select
     const targetReason = reason || 'Not Chosen';
     setSelectedReason(prev => prev === targetReason ? null : targetReason);
   };
@@ -55,6 +63,31 @@ const Dashboard: React.FC = () => {
   };
 
   const clearSelection = () => setSelectedReason(null);
+
+  // Handlers for Select Changes
+  const handleReasonChange = (id: string, newReason: string) => {
+    setDowntimeRecords(prev => prev.map(record => {
+      if (record.id === id) {
+        // When reason changes, default to the first available remark for that reason to keep data consistent
+        const validRemarks = REMARK_OPTIONS[newReason] || ['Other'];
+        return { 
+            ...record, 
+            reason: newReason, 
+            remarks: validRemarks[0] 
+        };
+      }
+      return record;
+    }));
+  };
+
+  const handleRemarkChange = (id: string, newRemark: string) => {
+    setDowntimeRecords(prev => prev.map(record => 
+      record.id === id ? { ...record, remarks: newRemark } : record
+    ));
+  };
+
+  // Safe to sort a copy for display logic
+  const topReason = [...reasonsPieData].sort((a,b) => b.value - a.value)[0]?.name || 'Not Chosen';
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 animate-fade-in">
@@ -91,8 +124,8 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: 'Total downtime ≥ 10m', value: '9:19:30', icon: <Clock size={16} className="text-rose-400"/> },
-          { label: '% labeled', value: '45%', icon: <List size={16} className="text-gray-400"/> }, // Updated mock value
-          { label: 'Top reason', value: 'Mechanical', bold: true, icon: <Zap size={16} className="text-yellow-500"/> },
+          { label: '% labeled', value: '45%', icon: <List size={16} className="text-gray-400"/> },
+          { label: 'Top reason', value: topReason, bold: true, icon: <Zap size={16} className="text-yellow-500"/> },
           { label: 'Avg stop length', value: '0:46:37', icon: <Activity size={16} className="text-blue-400"/> },
         ].map((kpi, i) => (
           <div key={i} className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
@@ -277,8 +310,8 @@ const Dashboard: React.FC = () => {
                     <thead className="bg-gray-50 text-gray-500 font-medium sticky top-0 z-10">
                         <tr>
                             <th className="p-3">Time</th>
-                            <th className="p-3">Reason</th>
-                            <th className="p-3">Remarks</th>
+                            <th className="p-3 w-48">Reason</th>
+                            <th className="p-3 w-48">Remarks</th>
                             <th className="p-3 text-right">Run Time</th>
                         </tr>
                     </thead>
@@ -288,43 +321,54 @@ const Dashboard: React.FC = () => {
                             const isMatch = !selectedReason || currentReason === selectedReason;
                             
                             // Visual dimming for non-matching rows
-                            if (!isMatch) {
-                                return (
-                                    <tr key={record.id} className="opacity-30 grayscale transition-all duration-300">
-                                        <td className="p-3 text-gray-600 font-mono text-xs">{record.time}</td>
-                                        <td className="p-3 text-gray-400 italic text-xs">{currentReason}</td>
-                                        <td className="p-3 text-gray-400 text-xs">-</td>
-                                        <td className="p-3 text-right text-gray-400 font-mono">{record.runTime}</td>
-                                    </tr>
-                                );
-                            }
+                            const rowOpacity = !isMatch ? 'opacity-30 grayscale' : 'opacity-100';
 
                             return (
                                 <tr 
                                     key={record.id} 
                                     onClick={() => handleRowClick(currentReason)}
-                                    className={`transition-colors cursor-pointer group ${
-                                        selectedReason === currentReason ? 'bg-indigo-50 hover:bg-indigo-100' : 'hover:bg-gray-50'
+                                    className={`transition-all duration-300 cursor-pointer group ${rowOpacity} ${
+                                        selectedReason === currentReason ? 'bg-indigo-50/50 hover:bg-indigo-50' : 'hover:bg-gray-50'
                                     }`}
                                 >
                                     <td className="p-3 text-gray-600 font-mono text-xs whitespace-nowrap">{record.time}</td>
+                                    
+                                    {/* Interactive Reason Select */}
                                     <td className="p-3">
-                                        <div className={`border rounded px-2 py-1 shadow-sm text-xs flex justify-between items-center w-32 transition-colors ${
-                                            selectedReason === currentReason ? 'border-indigo-300 bg-white' : 'border-gray-200 bg-white group-hover:border-gray-300'
-                                        }`}>
-                                            <div className="flex items-center gap-2 truncate">
-                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: REASON_COLORS[currentReason] }}></div>
-                                                {currentReason}
-                                            </div>
+                                        <div className="relative" onClick={(e) => e.stopPropagation()}>
+                                            <select 
+                                                value={currentReason}
+                                                onChange={(e) => handleReasonChange(record.id, e.target.value)}
+                                                className={`appearance-none w-full bg-white border rounded px-2 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer transition-colors shadow-sm
+                                                    ${selectedReason === currentReason ? 'border-indigo-300' : 'border-gray-200 group-hover:border-gray-300'}
+                                                `}
+                                                style={{ borderLeftColor: REASON_COLORS[currentReason], borderLeftWidth: '4px' }}
+                                            >
+                                                {REASON_OPTIONS.map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                                         </div>
                                     </td>
+
+                                    {/* Interactive Remarks Select */}
                                     <td className="p-3">
-                                        {record.remarks ? (
-                                            <span className="text-gray-700 text-xs font-medium">{record.remarks}</span>
-                                        ) : (
-                                            <span className="text-gray-400 text-xs italic">No remarks</span>
-                                        )}
+                                        <div className="relative" onClick={(e) => e.stopPropagation()}>
+                                            <select 
+                                                value={record.remarks || ''}
+                                                onChange={(e) => handleRemarkChange(record.id, e.target.value)}
+                                                className="appearance-none w-full bg-transparent border border-transparent hover:border-gray-200 hover:bg-white rounded px-2 py-1 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white cursor-pointer"
+                                            >
+                                                {(REMARK_OPTIONS[currentReason] || []).map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                            {/* Only show chevron on hover to keep interface clean */}
+                                            <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                                        </div>
                                     </td>
+
                                     <td className="p-3 text-right text-gray-700 font-medium font-mono">{record.runTime}</td>
                                 </tr>
                             );
