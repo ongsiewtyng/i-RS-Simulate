@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { MachineStatus, DowntimeRecord } from '../types';
+import { MachineStatus, DowntimeRecord, MachineListItem } from '../types';
 import { COLORS, REASON_COLORS } from '../constants';
 import UtilizationClock from './charts/UtilizationClock';
-import { generateTimelineEvents, MOCK_DOWNTIME_RECORDS } from '../services/mockData';
+import { generateTimelineEvents, MOCK_DOWNTIME_RECORDS, generateMachineList } from '../services/mockData';
 import { Download, RefreshCw, LayoutGrid, List, Clock, Zap, Activity, Info, ChevronDown } from 'lucide-react';
 
 // Options for dropdowns
@@ -25,6 +25,9 @@ const Dashboard: React.FC = () => {
   
   // State for interactive filtering
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
+
+  // Small machine list for the dashboard summary
+  const [dashboardMachines] = useState<MachineListItem[]>(generateMachineList(5));
 
   // Simulation: Update clock
   useEffect(() => {
@@ -225,70 +228,108 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Downtime Reasons Section */}
+      {/* Downtime Reasons & Machine List Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-         {/* Left: Reasons Pie */}
-         <div className="bg-white p-6 rounded-lg border border-gray-100 shadow-sm lg:col-span-1 flex flex-col items-center relative overflow-hidden">
-            <h3 className="w-full text-lg font-bold text-gray-900 mb-6 flex justify-between items-center">
-                Downtime Reasons
-                {selectedReason && (
-                    <button onClick={clearSelection} className="text-xs text-indigo-500 hover:text-indigo-700 font-medium">
-                        Clear Filter
-                    </button>
-                )}
-            </h3>
-            
-            <div className="h-64 w-full relative">
-                <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                        <Pie
-                            data={reasonsPieData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={40}
-                            outerRadius={80}
-                            dataKey="value"
-                            stroke="white"
-                            strokeWidth={2}
-                            onClick={handlePieClick}
-                            cursor="pointer"
-                        >
-                            {reasonsPieData.map((entry, index) => (
-                                <Cell 
-                                    key={`cell-${index}`} 
-                                    fill={REASON_COLORS[entry.name] || '#9ca3af'} 
-                                    opacity={selectedReason && selectedReason !== entry.name ? 0.3 : 1}
-                                    stroke={selectedReason === entry.name ? '#000' : '#fff'}
-                                    strokeWidth={selectedReason === entry.name ? 2 : 1}
-                                />
-                            ))}
-                        </Pie>
-                        <Tooltip />
-                    </PieChart>
-                </ResponsiveContainer>
-                 {selectedReason && (
-                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                         <span className="text-xs font-bold text-gray-800 bg-white/80 px-2 py-1 rounded shadow-sm">{selectedReason}</span>
-                     </div>
-                 )}
-            </div>
+         
+         {/* Left Column Stack */}
+         <div className="lg:col-span-1 space-y-6">
+             {/* Reasons Pie Card */}
+             <div className="bg-white p-6 rounded-lg border border-gray-100 shadow-sm flex flex-col items-center relative overflow-hidden">
+                <h3 className="w-full text-lg font-bold text-gray-900 mb-6 flex justify-between items-center">
+                    Downtime Reasons
+                    {selectedReason && (
+                        <button onClick={clearSelection} className="text-xs text-indigo-500 hover:text-indigo-700 font-medium">
+                            Clear Filter
+                        </button>
+                    )}
+                </h3>
+                
+                <div className="h-64 w-full relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <Pie
+                                data={reasonsPieData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={40}
+                                outerRadius={80}
+                                dataKey="value"
+                                stroke="white"
+                                strokeWidth={2}
+                                onClick={handlePieClick}
+                                cursor="pointer"
+                            >
+                                {reasonsPieData.map((entry, index) => (
+                                    <Cell 
+                                        key={`cell-${index}`} 
+                                        fill={REASON_COLORS[entry.name] || '#9ca3af'} 
+                                        opacity={selectedReason && selectedReason !== entry.name ? 0.3 : 1}
+                                        stroke={selectedReason === entry.name ? '#000' : '#fff'}
+                                        strokeWidth={selectedReason === entry.name ? 2 : 1}
+                                    />
+                                ))}
+                            </Pie>
+                            <Tooltip />
+                        </PieChart>
+                    </ResponsiveContainer>
+                     {selectedReason && (
+                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                             <span className="text-xs font-bold text-gray-800 bg-white/80 px-2 py-1 rounded shadow-sm">{selectedReason}</span>
+                         </div>
+                     )}
+                </div>
 
-            {/* Legend */}
-            <div className="w-full mt-4 grid grid-cols-2 gap-2">
-                {reasonsPieData.map((entry) => (
-                    <div 
-                        key={entry.name} 
-                        className={`flex items-center gap-2 text-xs cursor-pointer hover:bg-gray-50 p-1 rounded transition-opacity ${
-                            selectedReason && selectedReason !== entry.name ? 'opacity-40' : 'opacity-100'
-                        }`}
-                        onClick={() => handlePieClick(entry)}
-                    >
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: REASON_COLORS[entry.name] || '#9ca3af' }}></div>
-                        <span className="text-gray-600 truncate" title={entry.name}>{entry.name}</span>
-                        <span className="text-gray-400 ml-auto">{entry.value}</span>
-                    </div>
-                ))}
-            </div>
+                {/* Legend */}
+                <div className="w-full mt-4 grid grid-cols-2 gap-2">
+                    {reasonsPieData.map((entry) => (
+                        <div 
+                            key={entry.name} 
+                            className={`flex items-center gap-2 text-xs cursor-pointer hover:bg-gray-50 p-1 rounded transition-opacity ${
+                                selectedReason && selectedReason !== entry.name ? 'opacity-40' : 'opacity-100'
+                            }`}
+                            onClick={() => handlePieClick(entry)}
+                        >
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: REASON_COLORS[entry.name] || '#9ca3af' }}></div>
+                            <span className="text-gray-600 truncate" title={entry.name}>{entry.name}</span>
+                            <span className="text-gray-400 ml-auto">{entry.value}</span>
+                        </div>
+                    ))}
+                </div>
+             </div>
+
+             {/* Machine List Summary Card */}
+             <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm flex flex-col">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-gray-900 text-sm">Monitored Machines</h3>
+                    <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded">Top 5</span>
+                </div>
+                <div className="space-y-3">
+                    {dashboardMachines.map(machine => (
+                        <div key={machine.id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-md transition-colors cursor-default border border-transparent hover:border-gray-100">
+                            <div className="flex items-center gap-3">
+                                <span className={`w-2.5 h-2.5 rounded-full ring-2 ring-white shadow-sm flex-shrink-0 ${
+                                    machine.status === MachineStatus.RunningGood ? 'bg-emerald-500' :
+                                    machine.status === MachineStatus.Stopped ? 'bg-rose-500' :
+                                    machine.status === MachineStatus.RunningAbnormal ? 'bg-yellow-500' : 'bg-slate-400'
+                                }`}></span>
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-semibold text-gray-700">{machine.name}</span>
+                                    <span className="text-[10px] text-gray-400 font-mono">{machine.id}</span>
+                                </div>
+                            </div>
+                            <span className={`text-[10px] px-2 py-0.5 rounded font-medium border ${
+                                machine.status === MachineStatus.RunningGood ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                machine.status === MachineStatus.Stopped ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                machine.status === MachineStatus.RunningAbnormal ? 'bg-yellow-50 text-yellow-600 border-yellow-100' : 'bg-gray-50 text-gray-500 border-gray-200'
+                            }`}>
+                                {machine.status === MachineStatus.RunningGood ? 'OK' : 
+                                 machine.status === MachineStatus.RunningAbnormal ? 'WARN' : 
+                                 machine.status === MachineStatus.Stopped ? 'STOP' : 'OFF'}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+             </div>
          </div>
 
          {/* Right: Table */}
@@ -305,7 +346,7 @@ const Dashboard: React.FC = () => {
                 {selectedReason && <button onClick={clearSelection} className="hover:underline">Show All</button>}
             </div>
 
-            <div className="overflow-x-auto custom-scrollbar flex-1 max-h-[400px]">
+            <div className="overflow-x-auto custom-scrollbar flex-1 max-h-[500px]">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-gray-50 text-gray-500 font-medium sticky top-0 z-10">
                         <tr>
