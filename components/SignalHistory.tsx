@@ -171,37 +171,6 @@ const MachineConditions: React.FC = () => {
                      </div>
                  </div>
                </div>
-
-               {/* Live Metric Cards */}
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                   <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm flex items-center justify-between">
-                       <div>
-                           <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Temperature</p>
-                           <p className="text-2xl font-bold text-gray-800 transition-all duration-300">{selectedMachine.temperature.toFixed(1)}°C</p>
-                       </div>
-                       <div className="p-2 bg-orange-50 rounded-full text-orange-500">
-                           <Thermometer className="w-5 h-5" />
-                       </div>
-                   </div>
-                   <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm flex items-center justify-between">
-                       <div>
-                           <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Vibration</p>
-                           <p className="text-2xl font-bold text-gray-800 transition-all duration-300">{selectedMachine.vibration.toFixed(2)} mm/s</p>
-                       </div>
-                       <div className="p-2 bg-blue-50 rounded-full text-blue-500">
-                           <Activity className="w-5 h-5" />
-                       </div>
-                   </div>
-                   <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm flex items-center justify-between">
-                       <div>
-                           <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Load</p>
-                           <p className="text-2xl font-bold text-gray-800 transition-all duration-300">{selectedMachine.load.toFixed(0)}%</p>
-                       </div>
-                       <div className="p-2 bg-purple-50 rounded-full text-purple-500">
-                           <Zap className="w-5 h-5" />
-                       </div>
-                   </div>
-               </div>
            </div>
 
            {/* Timelines */}
