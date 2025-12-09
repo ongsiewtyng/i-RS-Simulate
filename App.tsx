@@ -36,10 +36,7 @@ const App: React.FC = () => {
          <div className={`h-16 flex items-center border-b border-gray-100 px-4 ${isSidebarOpen ? 'justify-between' : 'justify-center'} bg-white`}>
              {isSidebarOpen && (
                  <div className="flex items-center gap-2 font-bold text-xl text-indigo-900 animate-fade-in overflow-hidden whitespace-nowrap">
-                    <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-lg shadow-sm flex-shrink-0">
-                        <Zap size={18} fill="currentColor" />
-                    </div>
-                    <span>i-RS</span>
+                    <img src="/public/VAI-RS.png" alt="i-RS" className="w-32 h-32 object-contain" />
                  </div>
              )}
              
