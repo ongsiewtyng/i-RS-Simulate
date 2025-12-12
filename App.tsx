@@ -36,7 +36,7 @@ const App: React.FC = () => {
          <div className={`h-16 flex items-center border-b border-gray-100 px-4 ${isSidebarOpen ? 'justify-between' : 'justify-center'} bg-white`}>
              {isSidebarOpen && (
                  <div className="flex items-center gap-2 font-bold text-xl text-indigo-900 animate-fade-in overflow-hidden whitespace-nowrap">
-                    <img src="/public/VAI-RS.png" alt="i-RS" className="w-32 h-32 object-contain" />
+                    <img src="/VAI-RS.png" alt="i-RS" className="w-32 h-32 object-contain" />
                  </div>
              )}
              
